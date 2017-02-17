@@ -1,0 +1,31 @@
+<!doctype html>
+<title>Cross-origin due to document.domain</title>
+<meta charset=utf-8>
+<script src=/resources/testharness.js></script>
+<script src=/resources/testharnessreport.js></script>
+<div id=log></div>
+<iframe src=cross-origin-due-to-document-domain-only-helper.html></iframe>
+<script>
+async_test(t => {
+  onload = t.step_func_done(() => {
+    const frame = document.querySelector("iframe"),
+          innerSelf = self[0],
+          innerLocation = innerSelf.location
+    assert_equals(innerLocation.host, location.host)
+    assert_true(innerSelf.expandosForever)
+    assert_true(innerLocation.expandosForever)
+    assert_equals(frame.contentWindow, innerSelf)
+    assert_equals(frame.contentDocument, innerSelf.document)
+    innerSelf.haha()
+    assert_throws("SecurityError", () => innerSelf.expandosForever)
+    assert_throws("SecurityError", () => innerLocation.expandosForever)
+    assert_throws("SecurityError", () => innerLocation.host)
+    assert_equals(innerSelf.parent, self)
+    assert_throws("SecurityError", () => innerSelf.frameElement)
+    assert_throws("SecurityError", () => innerLocation.reload())
+    innerLocation.href = "about:blank"
+    assert_equals(frame.contentWindow, innerSelf)
+    assert_equals(frame.contentDocument, null)
+  })
+})
+</script>
