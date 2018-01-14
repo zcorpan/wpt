@@ -55,7 +55,7 @@ function do_test(dom_idl) {
 }
 
 promise_test(function() {
-    return fetch("/interfaces/dom.idl").then(response => response.text())
+    return fetch("/dom/interfaces.idl").then(response => response.text())
                                        .then(do_test);
 }, "Test driver");
 </script>

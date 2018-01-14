@@ -24,7 +24,7 @@
       var usbConnectionEvent;
 
       usb_test(async () => {
-        let response = await fetch('/interfaces/webusb.idl');
+        let response = await fetch('interfaces.idl');
         let idl_text = await response.text();
         let idl_array = new IdlArray();
         idl_array.add_idls(idl_text);

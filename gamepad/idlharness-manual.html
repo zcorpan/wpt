@@ -15,7 +15,7 @@ promise_test(async t => {
   const eventWatcher = new EventWatcher(t, window, "gamepadconnected");
   let e = await eventWatcher.wait_for("gamepadconnected");
   const idl_array = new IdlArray();
-  const gamepad_idl = await fetch("/interfaces/gamepad.idl").then(r => r.text());
+  const gamepad_idl = await fetch("interfaces.idl").then(r => r.text());
 
   idl_array.add_untested_idls('interface Event {};');
   idl_array.add_untested_idls('interface Navigator {};');

@@ -37,8 +37,8 @@ function fetchText(url) {
 }
 
 promise_test(() => {
-  return Promise.all(['/interfaces/html.idl',
-                      '/interfaces/hr-time.idl'].map(fetchText))
+  return Promise.all(['/html/interfaces.idl',
+                      'interfaces.idl'].map(fetchText))
                 .then(doTest);
 }, 'Test driver');
 </script>

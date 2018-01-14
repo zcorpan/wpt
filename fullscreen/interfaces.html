@@ -24,8 +24,8 @@ function fetchText(url) {
 }
 
 promise_test(() => {
-  return Promise.all(["/interfaces/dom.idl",
-                      "/interfaces/fullscreen.idl"].map(fetchText))
+  return Promise.all(["/dom/interfaces.idl",
+                      "interfaces.idl"].map(fetchText))
     .then(doTest);
 }, "Test driver");
 </script>

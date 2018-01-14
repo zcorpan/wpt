@@ -24,7 +24,7 @@
         }
 
         promise_test(async () => {
-          const response = await fetch('../interfaces/web-share.idl');
+          const response = await fetch('interfaces.idl');
           doTest(await response.text());
         }, 'Test driver');
     </script>
