@@ -52,7 +52,7 @@
   }
 
   promise_test(() => {
-    return fetch('/interfaces/mediacapture-main.idl')
+    return fetch('interfaces.idl')
       .then(response => response.text())
       .then(doIdlTest);
 

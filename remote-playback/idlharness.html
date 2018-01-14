@@ -31,7 +31,7 @@ function doTest(idl) {
 }
 
 promise_test(function() {
-  return fetch("/interfaces/remoteplayback.idl")
+  return fetch("interfaces.idl")
       .then(response => response.text())
       .then(doTest);
 }, "Test driver");

@@ -163,7 +163,7 @@
 
   promise_test(t => {
     return asyncInit()
-    .then(() => fetch('/interfaces/webrtc-pc.idl'))
+    .then(() => fetch('interfaces.idl'))
     .then(response => response.text())
     .then(doIdlTest);
   }, 'Main test driver');
