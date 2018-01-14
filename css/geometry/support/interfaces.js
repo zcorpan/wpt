@@ -24,6 +24,6 @@ function doTest(idl) {
 }
 
 promise_test(function() {
-  return fetch("/interfaces/geometry.idl").then(response => response.text())
-                                          .then(doTest);
+  return fetch("/css/geometry/interfaces.idl").then(response => response.text())
+                                              .then(doTest);
 }, "Test driver");

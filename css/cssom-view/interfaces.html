@@ -57,9 +57,9 @@ promise_test(function() {
   // Have to wait for onload
   return Promise.all([fetchData("/interfaces/html.idl"),
                       fetchData("/interfaces/dom.idl"),
-                      fetchData("/interfaces/cssom.idl"),
-                      fetchData("/interfaces/geometry.idl"),
-                      fetchData("/interfaces/cssom-view.idl"),
+                      fetchData("/css/cssom/interfaces.idl"),
+                      fetchData("/css/geometry/interfaces.idl"),
+                      fetchData("interfaces.idl"),
                       waitForLoad()])
                 .then(doTest);
 }, "Test driver");

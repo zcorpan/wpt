@@ -27,7 +27,7 @@ function fetchData(url) {
 promise_test(function() {
   return Promise.all([fetchData("/interfaces/html.idl"),
                       fetchData("/interfaces/dom.idl"),
-                      fetchData("/interfaces/cssom.idl"),
+                      fetchData("/css/cssom/interfaces.idl"),
                       fetchData("/interfaces/touchevents.idl"),
                       fetchData("/interfaces/uievents.idl")])
                 .then(doTest);
