@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>Font Data API: dummy</title>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script>
+'use strict';
+
+promise_test(async t => {
+  await promise_rejects(
+    t, new TypeError(),
+    navigator.fontData.getFontTable('No Such Font', 'glyf'),
+    'getFontTable() should reject if the font name is not known');
+
+  await promise_rejects(
+    t, new TypeError(),
+    navigator.fontData.getFontTable('Arial', 'not a valid table'),
+    'getFontTable() should reject if the table name is not valid');
+
+  await promise_rejects(
+    t, new TypeError(),
+    navigator.fontData.getFontTable('Arial', 'xxxx'),
+    'getFontTable() should reject if the table name is not known');
+
+  const table = await navigator.fontData.getFontTable('Arial', 'glyf');
+  assert_true(table instanceof Uint8Array);
+}, 'whatevs');
+
+</script>
