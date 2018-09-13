@@ -1,0 +1,27 @@
+environment:
+  matrix:
+    - PYTHON: "C:\\Python27"
+      SCRIPT: "tools\\ci\\ci_tools_unittest.ps1"
+      TOX_DIR: "tools"
+    - PYTHON: "C:\\Python27"
+      SCRIPT: "tools\\ci\\ci_tools_unittest.ps1"
+      TOX_DIR: "tools\\wptrunner"
+    - PYTHON: "C:\\Python27"
+      SCRIPT: "tools\\ci\\ci_tools_unittest.ps1"
+      TOX_DIR: "tools\\wpt"
+    - PYTHON: "C:\\Python27"
+      SCRIPT: "tools\\ci\\ci_wptrunner_infrastructure.ps1"
+    - PYTHON: "C:\\Python36"
+      SCRIPT: "tools\\ci\\ci_tools_unittest.ps1"
+      TOX_DIR: "tools"
+
+install:
+  - ps: "tools\\ci\\install.ps1"
+
+build: off
+
+test_script:
+  - ps1: "$env:SCRIPT"
+
+cache:
+  - MANIFEST.json
