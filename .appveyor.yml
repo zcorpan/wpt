@@ -1,3 +1,5 @@
+clone_depth: 50
+
 environment:
   matrix:
     - PYTHON: "C:\\Python27"
@@ -16,6 +18,7 @@ environment:
       TOX_DIR: "tools"
 
 install:
+  - ps: "Set-PSDebug -Trace 1"
   - ps: "tools\\ci\\install.ps1"
 
 build: off
