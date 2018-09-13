@@ -8,9 +8,9 @@ $RELEVANT_JOBS = $(python ./wpt test-jobs).split(
 )
 
 if ($env:RUN_JOB -or $RELEVANT_JOBS.contains($env:JOB)) {
-    $env:RUN_JOB = True
+    $env:RUN_JOB = $true
 } else {
-    $env:RUN_JOB = False
+    $env:RUN_JOB = $false
 }
 
 if ($env:RUN_JOB) {
