@@ -10,7 +10,7 @@ function run_applicable_tox {
     # run all environments that start with TOXENV
     # (e.g., py27-firefox as well as py27)
     $OLD_TOXENV=$env:TOXENV
-    Remove-Item env:$TOXENV
+    Remove-Item env:TOXENV
     $RUN_ENVS = $(tox -l).split(
         [string[]]$null,
         [System.StringSplitOptions]::RemoveEmptyEntries
