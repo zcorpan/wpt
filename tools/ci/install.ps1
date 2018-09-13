@@ -7,7 +7,7 @@ $RELEVANT_JOBS = $(python ./wpt test-jobs).split(
     [System.StringSplitOptions]::RemoveEmptyEntries
 )
 
-if ($env:RUN_JOB || $RELEVANT_JOBS.contains($env:JOB)) {
+if ($env:RUN_JOB -or $RELEVANT_JOBS.contains($env:JOB)) {
     $env:RUN_JOB = True
 } else {
     $env:RUN_JOB = False
