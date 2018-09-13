@@ -3,17 +3,22 @@ clone_depth: 50
 environment:
   matrix:
     - PYTHON: "C:\\Python27"
+      JOB: "tools_unittest"
       SCRIPT: "tools\\ci\\ci_tools_unittest.ps1"
       TOX_DIR: "tools"
     - PYTHON: "C:\\Python27"
+      JOB: "tools_unittest"
       SCRIPT: "tools\\ci\\ci_tools_unittest.ps1"
       TOX_DIR: "tools\\wptrunner"
     - PYTHON: "C:\\Python27"
+      JOB: "wpt_integration"
       SCRIPT: "tools\\ci\\ci_tools_unittest.ps1"
       TOX_DIR: "tools\\wpt"
     - PYTHON: "C:\\Python27"
+      JOB: "wptrunner_infrastructure"
       SCRIPT: "tools\\ci\\ci_wptrunner_infrastructure.ps1"
     - PYTHON: "C:\\Python36"
+      JOB: "tools_unittest"
       SCRIPT: "tools\\ci\\ci_tools_unittest.ps1"
       TOX_DIR: "tools"
 
