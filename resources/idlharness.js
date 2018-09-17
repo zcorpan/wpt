@@ -1342,6 +1342,19 @@ Object.defineProperty(IdlInterface.prototype, "interface_object", {
     },
 });
 
+Object.defineProperty(IdlInterface.prototype, "qualified_name", {
+    "get": function() {
+        // https://heycam.github.io/webidl/#qualified-name
+        var legacyNamespace = this.extAttrs.find(function(attribute) {
+            return attribute.name === "LegacyNamespace";
+        });
+        if (legacyNamespace) {
+            return legacyNamespace.rhs.value + "." + this.name;
+        }
+        return this.name;
+    },
+});
+
 IdlInterface.prototype.has_to_json_regular_operation = function() {
     return this.members.some(function(m) {
         return m.is_to_json_regular_operation();
@@ -1807,20 +1820,20 @@ IdlInterface.prototype.test_self = function()
         }
 
         // "The class string of an interface prototype object is the
-        // concatenation of the interface’s identifier and the string
+        // concatenation of the interface’s qualified identifier and the string
         // “Prototype”."
 
         // Skip these tests for now due to a specification issue about
         // prototype name.
         // https://www.w3.org/Bugs/Public/show_bug.cgi?id=28244
 
-        // assert_class_string(this.interface_object.prototype, this.name + "Prototype",
+        // assert_class_string(this.interface_object.prototype, this.qualified_name + "Prototype",
         //                     "class string of " + this.name + ".prototype");
 
         // String() should end up calling {}.toString if nothing defines a
         // stringifier.
         if (!this.has_stringifier()) {
-            // assert_equals(String(this.interface_object.prototype), "[object " + this.name + "Prototype]",
+            // assert_equals(String(this.interface_object.prototype), "[object " + this.qualified_name + "Prototype]",
             //         "String(" + this.name + ".prototype)");
         }
     }.bind(this), this.name + " interface: existence and properties of interface prototype object");
@@ -2648,16 +2661,16 @@ IdlInterface.prototype.test_primary_interface_of = function(desc, obj, exception
     }
 
     // "The class string of a platform object that implements one or more
-    // interfaces must be the identifier of the primary interface of the
+    // interfaces must be the qualified name of the primary interface of the
     // platform object."
     subsetTestByKey(this.name, test, function()
     {
         assert_equals(exception, null, "Unexpected exception when evaluating object");
         assert_equals(typeof obj, expected_typeof, "wrong typeof object");
-        assert_class_string(obj, this.name, "class string of " + desc);
+        assert_class_string(obj, this.qualified_name, "class string of " + desc);
         if (!this.has_stringifier())
         {
-            assert_equals(String(obj), "[object " + this.name + "]", "String(" + desc + ")");
+            assert_equals(String(obj), "[object " + this.qualified_name + "]", "String(" + desc + ")");
         }
     }.bind(this), "Stringification of " + desc);
 };
