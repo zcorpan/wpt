@@ -30,4 +30,17 @@
       location.href = null;
     });
   }, "`location.href = null` throws");
+
+  // After default policy creation string assignment implicitly calls createURL.
+  test(t => {
+    let p = window.TrustedTypes.createPolicy("default", { createURL: createURLJS }, true);
+    location.href = INPUTS.URL;
+    assert_equals(RESULTS.URL, location.href, "location href");
+  }, "`location.href = string` via default policy (successful URL transformation).");
+
+  // After default policy creation null assignment implicitly calls createURL.
+  test(t => {
+    location.href = null;
+    assert_equals("null", location.href, "location href");
+  }, "`location.href = null` assigned via default policy does not throw.");
 </script>
