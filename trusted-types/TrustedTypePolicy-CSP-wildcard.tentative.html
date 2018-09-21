@@ -2,13 +2,13 @@
 <script src="/resources/testharness.js" ></script>
 <script src="/resources/testharnessreport.js"></script>
 <script src="support/helper.sub.js"></script>
-<meta http-equiv="Content-Security-Policy" content="trusted-types">
+
+<meta http-equiv="Content-Security-Policy" content="trusted-types *">
 <body>
 <script>
-  //No name given test
+  // TODO: Does not work
   test(t => {
     let policy = window.TrustedTypes.createPolicy('SomeName', { createHTML: s => s } );
     assert_equals(policy.name, 'SomeName');
-  }, "No name list given - policy creation works");
+  }, "CSP supports wildcards.");
 </script>
-

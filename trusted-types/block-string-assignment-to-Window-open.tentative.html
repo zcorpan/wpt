@@ -25,7 +25,6 @@
     let p = createURL_policy(window, nb);
     assert_throws(new TypeError(), _ => {
       let child_window = win.open(url, "", "");
-      child_window.close();
     });
   }
 

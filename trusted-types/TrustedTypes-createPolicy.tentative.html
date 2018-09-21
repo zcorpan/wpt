@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<script src="/resources/testharness.js" ></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="support/helper.sub.js"></script>
+
+<meta http-equiv="Content-Security-Policy" content="trusted-types">
+<body>
+<script>
+  // Adopted from @koto's polyfill tests
+  test(t => {
+    const p = TrustedTypes.createPolicy('policy', {});
+
+    assert_true(p.createHTML instanceof Function);
+    assert_true(p.createScript instanceof Function);
+    assert_true(p.createScriptURL instanceof Function);
+    assert_true(p.createURL instanceof Function);
+    assert_equals(p.name, 'policy');
+  }, 'TrustedTypes.createPolicy returns a working policy object.');
+
+  // TODO: Does not throw
+  test(t => {
+    const parent = {
+      'createHTML': (s) => s,
+    };
+    const child = Object.create(parent);
+    child['createScriptURL'] = (s) => s;
+
+    const policy = TrustedTypes.createPolicy('childpolicy', child);
+
+    assert_equals('' + policy.createScriptURL('https://foo/'), 'https://foo/');
+    assert_throws(new Error(), _ => {
+      policy.createHTML('<foo>');
+    });
+  }, 'TrustedTypes.createPolicy ignores methods from policy prototype chain.');
+
+  // TODO: Does not throw
+  test(t => {
+    let p = TrustedTypes.createPolicy('frozencheck', {});
+    assert_true(Object.isFrozen(p));
+    assert_throws(new TypeError(), _ => {
+      p.a = 'foo';
+    });
+
+    assert_throws(new TypeError(), _ => {
+      p.createHTML = (s) => s;
+    });
+
+    assert_throws(new TypeError(), _ => {
+      delete p.createHTML;
+    });
+  }, 'TrustedTypes.createPolicy returns a frozen policy object.');
+
+  test(t => {
+    const p = TrustedTypes.createPolicy('empty', {});
+
+    assert_throws(new TypeError(), _ => {
+      p.createHTML('foo');
+    });
+
+    assert_throws(new TypeError(), _ => {
+      p.createScript('foo');
+    });
+
+    assert_throws(new TypeError(), _ => {
+      p.createScriptURL('foo');
+    });
+
+    assert_throws(new TypeError(), _ => {
+      p.createURL('foo');
+    });
+  }, 'TrustedTypes.createPolicy() with empty policy - createXXX reject by default.');
+
+  test(t => {
+    assert_throws(new TypeError(), _ => {
+      const p = TrustedTypes.createPolicy('policy', null);
+    });
+  }, 'TrustedTypes.createPolicy() with null throws.');
+</script>

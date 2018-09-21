@@ -2,12 +2,153 @@
 <script src="/resources/testharness.js" ></script>
 <script src="/resources/testharnessreport.js"></script>
 <script src="support/helper.sub.js"></script>
+
+<meta http-equiv="Content-Security-Policy" content="trusted-types">
 <body>
 <script>
-  //HTML tests
+  // TODO: Split into smaller files?
+  // Adopted from @koto's polyfill tests
+  test(t => {
+    const p = TrustedTypes.createPolicy('policy', {
+      'createHTML': (s) => s,
+    });
+    let s = p.createHTML('foo');
+    assert_equals(s + '', 'foo');
+    assert_throws(new TypeError(), _ => {
+      p.createScript('foo');
+    });
+    assert_throws(new TypeError(), _ => {
+      p.createScriptURL('foo');
+    });
+    assert_throws(new TypeError(), _ => {
+      p.createURL('foo');
+    });
+  }, 'TrustedTypesPolicy.createXXX methods can be used selectively.');
+
+  // TODO: Does not throw
+  const noopPolicy = {
+          createHTML: (s) => s,
+          createScriptURL: (s) => s,
+          createURL: (s) => s,
+          createScript: (s) => s,
+  };
+
+  test(t => {
+    const p = TrustedTypes.createPolicy('frozen', noopPolicy);
+
+    let html = p.createHTML('foo');
+
+    assert_true(Object.isFrozen(html));
+    assert_throws(new TypeError(), _ => {
+      html.toString = () => 'fake';
+    });
+    assert_throws(new TypeError(), _ => {
+      html.__proto__ = {toString: () => 'fake'};
+    });
+    assert_throws(new TypeError(), _ => {
+      html.__proto__.toString = () => 'fake';
+    });
+
+    // Prevent sanitizer that passes javascript:... from masquerading.
+    assert_throws(new TypeError(), _ => {
+      Object.setPrototypeOf(html, TrustedTypes.TrustedURL.prototype);
+    });
+
+    // Proxy that traps get of toString.
+    let proxyHtml = new Proxy(html, {
+      get: (target, key, receiver) => {
+        if (key === 'toString') {
+          return () => 'fake';
+        }
+      },
+    });
+
+    assert_false(proxyHtml.toString() !== 'foo' && TrustedTypes.isHTML(proxyHtml));
+
+    // Check that the attacks above don't succeed and throw.
+    assert_true(TrustedTypes.isHTML(html));
+    assert_false(TrustedTypes.isURL(html));
+    assert_equals(String(html), 'foo');
+  }, 'TrustedTypesPolicy.createXXX methods return frozen values.');
+
+  // TODO: From enforcer tests.
+  // What about the choice of elements and attributes?
+  // To merge into HTMLElement-generic tests?
+  test(t => {
+    policy = TrustedTypes.createPolicy(Math.random(), noopPolicy, true);
+    let el = document.createElement('div');
+    assert_throws(new TypeError(), _ => {
+      el.innerHTML = policy.createScript(INPUTS.SCRIPT);
+    });
+    assert_throws(new TypeError(), _ => {
+      el.innerHTML = policy.createScriptURL(INPUTS.SCRIPTURL);
+    });
+    assert_throws(new TypeError(), _ => {
+      el.innerHTML = policy.createURL(INPUTS.URL);
+    });
+    assert_equals(el.innerHTML, '');
+  }, 'TrustedTypePolicy does not mix the types on innerHTML.');
+
+  test(t => {
+    policy = TrustedTypes.createPolicy(Math.random(), noopPolicy, true);
+    let el = document.createElement('div');
+    assert_throws(new TypeError(), _ => {
+      el.insertAdjacentHTML('afterbegin', policy.createScript(INPUTS.SCRIPT));
+    });
+    assert_throws(new TypeError(), _ => {
+      el.insertAdjacentHTML('afterbegin', policy.createScriptURL(INPUTS.SCRIPTURL));
+    });
+    assert_throws(new TypeError(), _ => {
+      el.insertAdjacentHTML('afterbegin', policy.createURL(INPUTS.URL));
+    });
+    assert_equals(el.innerHTML, '');
+  }, 'TrustedTypePolicy does not mix the types on Element.insertAdjacentHTML.');
+
+  test(t => {
+    policy = TrustedTypes.createPolicy(Math.random(), noopPolicy, true);
+    let el = document.createElement('script');
+    assert_throws(new TypeError(), _ => {
+      el.src = policy.createHTML(INPUTS.HTML);
+    });
+    assert_throws(new TypeError(), _ => {
+      el.src = policy.createScript(INPUTS.SCRIPT);
+    });
+    assert_throws(new TypeError(), _ => {
+      el.src = policy.createURL(INPUTS.URL);
+    });
+    assert_equals(el.src, '');
+  }, 'TrustedTypePolicy does not mix the types on HTMLScriptElement.src.');
+
+  test(t => {
+    policy = TrustedTypes.createPolicy(Math.random(), noopPolicy, true);
+    let el = document.createElement('iframe');
+    assert_throws(new TypeError(), _ => {
+      el.src = policy.createHTML(INPUTS.HTML);
+    });
+    assert_throws(new TypeError(), _ => {
+      el.src = policy.createScript(INPUTS.SCRIPT);
+    });
+    assert_throws(new TypeError(), _ => {
+      el.src = policy.createScriptURL(INPUTS.SCRIPTURL);
+    });
+    assert_equals(el.src, '');
+  }, 'TrustedTypePolicy does not mix the types on Element.prototype.setAttribute.');
+
+  test(t => {
+    policy = TrustedTypes.createPolicy(Math.random(), noopPolicy, true);
+    let el = document.createElement('div');
+    el.title = policy.createHTML(INPUTS.URL);
+    assert_equals(el.title, INPUTS.URL);
+    el.title = policy.createURL(INPUTS.HTML);
+    assert_equals(el.title, '');
+  }, 'TrustedTypePolicy does not mix the types on HTMLElement innocuous attribute.');
+
+  // HTML tests
   function createHTMLTest(policyName, policy, expectedHTML, t) {
     let p = window.TrustedTypes.createPolicy(policyName, policy);
     assert_true(p.createHTML('whatever') instanceof TrustedHTML);
+    // TODO: Add isHTML test here once TrustedXXX.isXXX() is implemented
+    // assert_true(TrustedTypes.isHTML(html));
     assert_equals(p.createHTML('whatever') + "", expectedHTML);
   }
 
@@ -74,10 +215,11 @@
     });
   }, "createHTML defined - calling undefined callbacks throws");
 
-  //Script tests
+  // Script tests
   function createScriptTest(policyName, policy, expectedScript, t) {
     let p = window.TrustedTypes.createPolicy(policyName, policy);
     assert_true(p.createScript('whatever') instanceof TrustedScript);
+    // TODO: Add isScript test here once TrustedXXX.isXXX() is implemented
     assert_equals(p.createScript('whatever') + "", expectedScript);
   }
 
@@ -147,10 +289,11 @@
   }, "createScript defined - calling undefined callbacks throws");
 
 
-  //ScriptURL tests
+  // ScriptURL tests
   function createScriptURLTest(policyName, policy, expectedScriptURL, t) {
     let p = window.TrustedTypes.createPolicy(policyName, policy);
     assert_true(p.createScriptURL(INPUTS.SCRIPTURL) instanceof TrustedScriptURL);
+    // TODO: Add isScriptURL test here once TrustedXXX.isXXX() is implemented
     assert_equals(p.createScriptURL(INPUTS.SCRIPTURL) + "", expectedScriptURL);
   }
 
@@ -220,10 +363,11 @@
   }, "createScriptURL defined - calling undefined callbacks throws");
 
 
-  //URL tests
+  // URL tests
   function createURLTest(policyName, policy, expectedURL, t) {
     let p = window.TrustedTypes.createPolicy(policyName, policy);
     assert_true(p.createURL(INPUTS.URL) instanceof TrustedURL);
+    // TODO: Add isURL test here once TrustedXXX.isXXX() is implemented
     assert_equals(p.createURL(INPUTS.URL) + "", expectedURL);
   }
 

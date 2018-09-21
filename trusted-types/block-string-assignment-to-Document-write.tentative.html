@@ -15,6 +15,7 @@
     let html = p.createHTML(INPUTS.HTML);
     document.write(html);
     assert_equals(document.body.innerText, RESULTS.HTML);
+    document.body.innerText = '';
   }, "document.write with html assigned via policy (successful URL transformation).");
 
   // String assignments throw.
@@ -22,6 +23,7 @@
     assert_throws(new TypeError(), _ => {
       document.write('A string');
     });
+    assert_equals(document.body.innerText, '');
   }, "`document.write(string)` throws");
 
   // Null assignment throws.
@@ -29,5 +31,6 @@
     assert_throws(new TypeError(), _ => {
       document.write(null);
     });
+    assert_equals(document.body.innerText, '');
   }, "`document.write(null)` throws");
 </script>
