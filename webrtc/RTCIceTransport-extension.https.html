@@ -239,7 +239,7 @@ test(t => {
 }, `start() flushes remote candidates and transitions state to 'new' if ` +
    'later called with different remote parameters');
 
-promise_test(async t => {
+function makeGatherAndStartTwoIceTransports(t) {
   const localTransport = makeIceTransport(t);
   const remoteTransport = makeIceTransport(t);
   localTransport.onicecandidate = e => {
@@ -256,6 +256,12 @@ promise_test(async t => {
   remoteTransport.gather({});
   localTransport.start(remoteTransport.getLocalParameters(), 'controlling');
   remoteTransport.start(localTransport.getLocalParameters(), 'controlled');
+  return [ localTransport, remoteTransport ];
+}
+
+promise_test(async t => {
+  const [ localTransport, remoteTransport ] =
+      makeGatherAndStartTwoIceTransports(t);
   const localWatcher = new EventWatcher(t, localTransport, 'statechange');
   const remoteWatcher = new EventWatcher(t, remoteTransport, 'statechange');
   await Promise.all([
@@ -267,5 +273,51 @@ promise_test(async t => {
     }),
   ]);
 }, 'Two RTCIceTransports connect to each other');
+
+function assert_ice_candidate_in_array(actual, expected, description) {
+  assert_true(expected.some(e => e.candidate === actual.candidate),
+      description);
+}
+
+promise_test(async t => {
+  async function waitForConnectedThenSelectedCandidatePairChange(t, transport,
+      transportName) {
+    const watcher = new EventWatcher(t, localTransport,
+        [ 'statechange', 'selectedcandidatepairchange' ]);
+    await watcher.wait_for('statechange');
+    assert_equals(transport.state, 'connected',
+        `${transportName} state should be 'connected'`);
+    await watcher.wait_for('selectedcandidatepairchange');
+    const selectedCandidatePair = transport.getSelectedCandidatePair();
+    assert_not_equals(selectedCandidatePair, null,
+        `${transportName} selected candidate pair should not be null once ` +
+        'the selectedcandidatepairchange event fires');
+    assert_ice_candidate_in_array(selectedCandidatePair.local,
+        transport.getLocalCandidates(),
+        `${transportName} selected candidate pair local should be in the ` +
+        'list of local candidates');
+    assert_ice_candidate_in_array(selectedCandidatePair.remote,
+        transport.getRemoteCandidates(),
+        `${transportName} selected candidate pair local should be in the ` +
+        'list of remote candidates');
+  }
+  const [ localTransport, remoteTransport ] =
+      makeGatherAndStartTwoIceTransports(t);
+  await Promise.all([
+    waitForConnectedThenSelectedCandidatePairChange(t, localTransport,
+        'local transport'),
+    waitForConnectedThenSelectedCandidatePairChange(t, remoteTransport,
+        'remote transport'),
+  ]);
+}, 'Selected candidate pair changes once the RTCIceTransports connect.');
+
+promise_test(async t => {
+  const [ transport, ] = makeGatherAndStartTwoIceTransports(t);
+  const watcher = new EventWatcher(t, transport, 'selectedcandidatepairchange');
+  await watcher.wait_for('selectedcandidatepairchange');
+  transport.stop();
+  assert_equals(transport.getSelectedCandidatePair(), null);
+}, 'getSelectedCandidatePair() returns null once the RTCIceTransport is ' +
+    'stopped.');
 
 </script>
