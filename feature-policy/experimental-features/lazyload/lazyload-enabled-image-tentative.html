@@ -1,0 +1,14 @@
+<!--
+  This test verifies that when Feature-Policy "lazyload" is enabled, the "lazyload"
+  attribute value of "off" turns off lazy loading (i.e., the expected behavior
+  from the attribute). This is verified by comparing this page with the reference
+  page in which the "lazyload" attribute for the image is set to "on".
+-->
+<!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1 maximum-scale=1">
+<link rel="stylesheet" href="/feature-policy/experimental-features/resources/lazyload-image.css">
+<link rel="mismatch" href="/feature-policy/experimental-features/lazyload/lazyload-image-reference-on.html">
+<body>
+  <p>Image inserted further below.</p>
+  <img lazyload="off" src="/feature-policy/experimental-features/resources/image.png"/>
+</body>

@@ -1,0 +1,12 @@
+<!--
+  This test verifies that when Feature-Policy "lazyload" is disabled, the "lazyload"
+  attribute value of "off" behaves the same as "lazyload" attribute value of "auto".
+-->
+<!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1 maximum-scale=1">
+<link rel="stylesheet" href="/feature-policy/experimental-features/resources/lazyload-image.css">
+<link rel="match" href="/feature-policy/experimental-features/lazyload/lazyload-image-reference-auto.html">
+<body>
+  <p>Image inserted further below.</p>
+  <img lazyload="off" src="/feature-policy/experimental-features/resources/image.png"/>
+</body>
