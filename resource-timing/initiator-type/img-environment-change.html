@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Resource Timing initiator type: img fetch after an environment change</title>
+<link rel="help" href="https://html.spec.whatwg.org/multipage/images.html#img-environment-changes">
+<link rel="help" href="https://fetch.spec.whatwg.org/#request-initiator-type">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/common/utils.js"></script>
+<iframe id="frame" style="width: 100px; height: 100px"></iframe>
+<script>
+promise_test(async t => {
+  const id = token();
+  const narrow = `/images/green-1x1.png?narrow-${id}`;
+  const wide = `/images/green-2x2.png?wide-${id}`;
+  const frame = document.getElementById("frame");
+  const frameLoaded = new Promise(resolve => frame.onload = resolve);
+  frame.srcdoc = `<picture><source media="(min-width: 500px)" srcset="${wide}">` +
+                 `<img src="${narrow}"></picture>`;
+  await frameLoaded;
+  const win = frame.contentWindow;
+  const img = frame.contentDocument.querySelector("img");
+  assert_true(img.currentSrc.endsWith(narrow), "narrow image selected initially");
+  assert_equals(win.performance.getEntriesByName(img.currentSrc)[0]?.initiatorType, "img",
+                "initial fetch");
+
+  const entry = new Promise(resolve => {
+    new win.PerformanceObserver(list => {
+      for (const e of list.getEntries()) {
+        if (e.name.endsWith(wide)) {
+          resolve(e);
+        }
+      }
+    }).observe({type: "resource", buffered: true});
+  });
+  const imgLoaded = new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = () => reject(new Error("img error"));
+  });
+  frame.style.width = "600px";
+  await imgLoaded;
+  assert_true(img.currentSrc.endsWith(wide), "wide image selected after resize");
+  const timeout = new Promise((resolve, reject) => {
+    t.step_timeout(() => reject(new Error("no resource timing entry")), 2000);
+  });
+  const e = await Promise.race([entry, timeout]);
+  assert_equals(e.initiatorType, "img");
+}, "img fetch from reacting to environment changes has initiator type 'img'");
+</script>

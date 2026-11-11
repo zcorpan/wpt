@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Resource Timing initiator type: lazy-loaded img</title>
+<link rel="help" href="https://html.spec.whatwg.org/multipage/images.html#updating-the-image-data">
+<link rel="help" href="https://fetch.spec.whatwg.org/#request-initiator-type">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/common/utils.js"></script>
+<div style="height: 10000px"></div>
+<img id="img" loading="lazy">
+<script>
+promise_test(async t => {
+  const url = `/images/green-1x1.png?lazy-${token()}`;
+  const img = document.getElementById("img");
+  img.src = url;
+  await new Promise(resolve => window.addEventListener("load", resolve, {once: true}));
+  await new Promise(resolve => t.step_timeout(resolve, 100));
+  assert_false(img.complete, "img not loaded before scrolling into view");
+  assert_equals(performance.getEntriesByName(img.src).length, 0,
+                "no entry before scrolling into view");
+
+  const entry = new Promise(resolve => {
+    new PerformanceObserver(list => {
+      for (const e of list.getEntries()) {
+        if (e.name.endsWith(url)) {
+          resolve(e);
+        }
+      }
+    }).observe({type: "resource", buffered: true});
+  });
+  const imgLoaded = new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = () => reject(new Error("img error"));
+  });
+  img.scrollIntoView();
+  await imgLoaded;
+  const timeout = new Promise((resolve, reject) => {
+    t.step_timeout(() => reject(new Error("no resource timing entry")), 2000);
+  });
+  const e = await Promise.race([entry, timeout]);
+  assert_equals(e.initiatorType, "img");
+}, "lazy-loaded img fetch has initiator type 'img'");
+</script>
