@@ -155,9 +155,9 @@ promise_test(async t => {
   img.loading = "eager";
   await loaded;
 
-  assert_true(img.currentSrc.includes("large-unrendered-omitted-source-sizes"),
-              `Omitted <source sizes> must default to bare auto and fall back to 100vw when unrendered (got: ${img.currentSrc})`);
-}, "Unrendered img with sizes='auto, 300px' and omitted <source sizes> falls back to 100vw");
+  assert_true(img.currentSrc.includes("medium-unrendered-omitted-source-sizes"),
+              `Omitted <source sizes> must use the img's sizes and fall back to 300px when unrendered (got: ${img.currentSrc})`);
+}, "Unrendered img with sizes='auto, 300px' and omitted <source sizes> falls back to 300px");
 
 promise_test(async t => {
   const picture = document.createElement("picture");
