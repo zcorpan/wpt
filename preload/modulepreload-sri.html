@@ -22,6 +22,8 @@
       element.onload = resolve;
       element.onerror = () => reject(
           new Error(`${element.tagName} failed unexpectedly`));
+      step_timeout(() => reject(
+          new Error(`${element.tagName} fired neither load nor error`)), 5000);
       document.head.appendChild(element);
     });
   }
@@ -31,6 +33,8 @@
       element.onload = () => reject(
           new Error(`${element.tagName} loaded unexpectedly`));
       element.onerror = resolve;
+      step_timeout(() => reject(
+          new Error(`${element.tagName} fired neither load nor error`)), 5000);
       document.head.appendChild(element);
     });
   }
@@ -38,7 +42,7 @@
   // Returns a unique URL for every call.
   function get_log_module_url() {
     return new URL(
-        `/preload/resources/prefetch-info.py?key=${token()}&file=log.js&type=text/javascript`,
+        `/preload/resources/prefetch-info.py?key=${token()}&file=log.js&type=text/javascript&cache-control=no-store`,
         location.href).href;
   }
 
