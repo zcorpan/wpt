@@ -361,6 +361,51 @@
     assert_equals(requests.length, 1, 'Server must receive exactly one network request');
   }, "modulepreload with correct integrity -> module script with correct integrity");
 
+  promise_test(async () => {
+    log = [];
+    const url = get_log_module_url();
+
+    const link = document.createElement('link');
+    link.rel = 'modulepreload';
+    link.href = url;
+    link.integrity = kCorrectIntegrity;
+    await appendAndExpectLoad(link);
+
+    // Only unknown hash algorithms parse to the empty set, same as no integrity.
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = url;
+    script.integrity = 'md5-AAAA';
+    await appendAndExpectLoad(script);
+
+    assert_equals(log.length, 1, 'Script must be executed exactly once');
+
+    const requests = await get_prefetch_info(url);
+    assert_equals(requests.length, 1, 'Server must receive exactly one network request');
+  }, "modulepreload with correct integrity -> module script with only an unknown hash algorithm");
+
+  promise_test(async () => {
+    log = [];
+    const url = get_log_module_url();
+
+    const link = document.createElement('link');
+    link.rel = 'modulepreload';
+    link.href = url;
+    link.integrity = `${kCorrectIntegrity} ${kAnotherCorrectIntegrity}`;
+    await appendAndExpectLoad(link);
+
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = url;
+    script.integrity = `${kAnotherCorrectIntegrity} ${kCorrectIntegrity}`;
+    await appendAndExpectLoad(script);
+
+    assert_equals(log.length, 1, 'Script must be executed exactly once');
+
+    const requests = await get_prefetch_info(url);
+    assert_equals(requests.length, 1, 'Server must receive exactly one network request');
+  }, "modulepreload with two hashes -> module script with the same hashes in another order");
+
   // =========================================================================
   // In-flight tests: <script type="module"> is inserted while the
   // <link rel="modulepreload"> fetch is still in flight.
