@@ -597,8 +597,9 @@
     link.integrity = kWrongIntegrity;
 
     // Script specifies correct integrity, which mismatches the in-flight
-    // modulepreload's wrong integrity. The script fails immediately.
-    // The modulepreload fails when its fetch finishes and fails SRI.
+    // modulepreload's wrong integrity. The script waits for the
+    // modulepreload, which fails SRI and is removed from the module map, and
+    // then fetches the module again.
     const script = document.createElement('script');
     script.type = 'module';
     script.src = url;
@@ -606,13 +607,13 @@
 
     await Promise.all([
       appendAndExpectError(link),
-      appendAndExpectError(script),
+      appendAndExpectLoad(script),
     ]);
 
-    assert_equals(log.length, 0, 'Script must not be executed');
+    assert_equals(log.length, 1, 'Script must be executed exactly once');
 
     const requests = await get_prefetch_info(url);
-    assert_equals(requests.length, 1,
-        'Server must receive exactly one network request');
+    assert_equals(requests.length, 2,
+        'Server must receive one modulepreload and one module script requests');
   }, "in-flight modulepreload with wrong integrity -> module script with correct integrity");
 </script>
