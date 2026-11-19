@@ -365,6 +365,24 @@
     assert_equals(requests.length, 1, 'Server must receive exactly one network request');
   }, "modulepreload with correct integrity -> module script with correct integrity");
 
+  promise_test(async () => {
+    log = [];
+    const url = get_log_module_url();
+
+    const script0 = document.createElement('script');
+    script0.type = 'module';
+    script0.src = url;
+    await appendAndExpectLoad(script0);
+
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = url;
+    script.integrity = kWrongIntegrity;
+    await appendAndExpectError(script);
+
+    assert_equals(log.length, 1, 'Script must be executed exactly once');
+  }, "module script with no integrity -> module script with wrong integrity");
+
   // =========================================================================
   // In-flight tests: <script type="module"> is inserted while the
   // <link rel="modulepreload"> fetch is still in flight.
