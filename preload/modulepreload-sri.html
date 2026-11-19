@@ -361,6 +361,60 @@
     assert_equals(requests.length, 1, 'Server must receive exactly one network request');
   }, "modulepreload with correct integrity -> module script with correct integrity");
 
+  function eventOrTimeout(t, element) {
+    return new Promise(resolve => {
+      element.addEventListener('load', () => resolve('load'));
+      element.addEventListener('error', () => resolve('error'));
+      t.step_timeout(() => resolve('timeout'), 3000);
+    });
+  }
+
+  promise_test(async t => {
+    log = [];
+    const url = get_log_module_url();
+
+    const link = document.createElement('link');
+    link.rel = 'modulepreload';
+    link.href = url;
+    await appendAndExpectLoad(link);
+
+    // Not force-async, so these go in the list of scripts that will execute
+    // in order as soon as possible.
+    const script1 = document.createElement('script');
+    script1.type = 'module';
+    script1.async = false;
+    script1.src = url;
+    script1.integrity = kCorrectIntegrity;
+    const script2 = document.createElement('script');
+    script2.type = 'module';
+    script2.async = false;
+    script2.src = get_log_module_url();
+    const result1 = eventOrTimeout(t, script1);
+    const result2 = eventOrTimeout(t, script2);
+    document.head.append(script1, script2);
+
+    assert_equals(await result1, 'error', 'mismatching script');
+    assert_equals(await result2, 'load', 'later in-order script');
+  }, "integrity mismatch on an in-order module script doesn't block later in-order scripts");
+
+  promise_test(async t => {
+    const url = get_log_module_url();
+    const iframe = document.createElement('iframe');
+    const events = [];
+    window.recordIframeScriptEvent = type => events.push(type);
+    iframe.srcdoc = `<script>var log = [];<\/script>
+<link rel="modulepreload" href="${url}">
+<script type="module" src="${url}" integrity="${kCorrectIntegrity}"
+        onload="parent.recordIframeScriptEvent('load')"
+        onerror="parent.recordIframeScriptEvent('error')"><\/script>`;
+    const loaded = eventOrTimeout(t, iframe);
+    document.body.append(iframe);
+    t.add_cleanup(() => iframe.remove());
+
+    assert_equals(await loaded, 'load', 'the document finishes loading');
+    assert_array_equals(events, ['error'], 'script events');
+  }, "integrity mismatch on a parser-inserted module script doesn't block the document");
+
   // =========================================================================
   // In-flight tests: <script type="module"> is inserted while the
   // <link rel="modulepreload"> fetch is still in flight.
