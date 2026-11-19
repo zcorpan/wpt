@@ -361,6 +361,43 @@
     assert_equals(requests.length, 1, 'Server must receive exactly one network request');
   }, "modulepreload with correct integrity -> module script with correct integrity");
 
+  function addImportMapIntegrity(url, integrity) {
+    const importMap = document.createElement('script');
+    importMap.type = 'importmap';
+    importMap.textContent = JSON.stringify({integrity: {[url]: integrity}});
+    document.head.append(importMap);
+  }
+
+  promise_test(async () => {
+    log = [];
+    const url = get_log_module_url();
+
+    await import(url);
+    addImportMapIntegrity(url, kCorrectIntegrity);
+    await import(url);
+
+    assert_equals(log.length, 1, 'Script must be executed exactly once');
+  }, "import() -> import map integrity for the loaded module -> import()");
+
+  promise_test(async () => {
+    log = [];
+    const url = get_log_module_url();
+
+    const link = document.createElement('link');
+    link.rel = 'modulepreload';
+    link.href = url;
+    await appendAndExpectLoad(link);
+
+    addImportMapIntegrity(url, kCorrectIntegrity);
+
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = url;
+    await appendAndExpectLoad(script);
+
+    assert_equals(log.length, 1, 'Script must be executed exactly once');
+  }, "modulepreload with no integrity -> import map integrity -> module script with no integrity");
+
   // =========================================================================
   // In-flight tests: <script type="module"> is inserted while the
   // <link rel="modulepreload"> fetch is still in flight.
