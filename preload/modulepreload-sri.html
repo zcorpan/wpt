@@ -390,12 +390,14 @@
 
     addImportMapIntegrity(url, kCorrectIntegrity);
 
+    // The script takes its integrity from the import map, which doesn't match
+    // the module map entry.
     const script = document.createElement('script');
     script.type = 'module';
     script.src = url;
-    await appendAndExpectLoad(script);
+    await appendAndExpectError(script);
 
-    assert_equals(log.length, 1, 'Script must be executed exactly once');
+    assert_equals(log.length, 0, 'Script must not be executed');
   }, "modulepreload with no integrity -> import map integrity -> module script with no integrity");
 
   // =========================================================================
