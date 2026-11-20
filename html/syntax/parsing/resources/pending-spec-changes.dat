@@ -1164,10 +1164,10 @@ svg title
 | "ab"
 
 #data
-<!DOCTYPE x>
+a<!DOCTYPE x>b
 #errors
-incorrectly-opened-comment
+unexpected-doctype
 #document-fragment
 svg title
 #document
-| <!-- DOCTYPE x -->
+| "ab"
