@@ -425,7 +425,7 @@ svg title
 #document-fragment
 svg title
 #document
-| "<!--x-->"
+| <!-- x -->
 
 #data
 a</style>b
@@ -457,7 +457,7 @@ svg noscript
 #document-fragment
 math title
 #document
-| "<?x?>"
+| <?x ?>
 
 #data
 <!DOCTYPE html><svg><title>a</title
@@ -779,7 +779,8 @@ math script
 #document-fragment
 math noscript
 #document
-| "<!--x--><?y?>"
+| <!-- x -->
+| <?y ?>
 
 #data
 <textarea>y</textarea>
@@ -1085,3 +1086,45 @@ expected-named-closing-tag-but-got-eof
 math style
 #document
 | "x"
+
+#data
+<!-- .a{} -->
+#errors
+#document-fragment
+svg style
+#document
+| <!--  .a{}  -->
+
+#data
+a<!-- </style> -->b
+#errors
+#document-fragment
+svg style
+#document
+| "ab"
+
+#data
+a<?x </style?>b
+#errors
+#document-fragment
+svg style
+#document
+| "ab"
+
+#data
+a<!x</title>b
+#errors
+incorrectly-opened-comment
+#document-fragment
+svg title
+#document
+| "ab"
+
+#data
+<!DOCTYPE x>
+#errors
+incorrectly-opened-comment
+#document-fragment
+svg title
+#document
+| <!-- DOCTYPE x -->
