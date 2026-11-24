@@ -25,7 +25,7 @@ async def test_original_opener_context_create(bidi_session, wait_for_event, wait
         original_opener=None,
         url="about:blank",
         client_window=contexts[0]["clientWindow"],
-        has_immediate_navigation=False,
+        has_planned_navigation=False,
     )
 
 
@@ -72,5 +72,5 @@ async def test_original_opener_window_open(bidi_session, wait_for_event, wait_fo
         original_opener=top_level_context["context"],
         url="about:blank",
         client_window=found_context["clientWindow"],
-        has_immediate_navigation=True,
+        has_planned_navigation=True,
     )
