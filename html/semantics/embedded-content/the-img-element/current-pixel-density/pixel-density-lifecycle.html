@@ -330,5 +330,43 @@ promise_test(async t => {
   await new Promise(resolve => t.step_timeout(resolve, 150));
   assert_equals(errorCount, 1, "viewport resize should not re-fetch broken 2x candidate");
 }, "Environment change does not re-fetch a broken 2x srcset candidate");
+promise_test(async t => {
+  const id = token();
+  const smallUrl = `/images/green-256x256.png?env-small-${id}`;
+  const bigUrl = `/images/green-100x100.png?env-big-${id}&pipe=trickle(d1)`;
+  const iframe = document.createElement("iframe");
+  iframe.style.width = "600px";
+  iframe.style.height = "200px";
+  t.add_cleanup(() => iframe.remove());
+  const iframeLoaded = waitForEvent(iframe, "load");
+  iframe.srcdoc = "<!doctype html><body></body>";
+  document.body.appendChild(iframe);
+  await iframeLoaded;
+
+  const doc = iframe.contentDocument;
+  const picture = doc.createElement("picture");
+  const source = doc.createElement("source");
+  source.media = "(min-width: 800px)";
+  source.srcset = bigUrl;
+  const img = doc.createElement("img");
+  img.src = smallUrl;
+  picture.append(source, img);
+  const loaded = waitForEvent(img, "load");
+  doc.body.appendChild(picture);
+  await loaded;
+  assert_equals(img.naturalWidth, 256, "small image selected initially");
+
+  // Starts an environment-change fetch for bigUrl.
+  iframe.style.width = "900px";
+  await nextAnimationFrames(iframe.contentWindow, 2);
+  await new Promise(resolve => t.step_timeout(resolve, 200));
+
+  // A relevant mutation that still selects bigUrl keeps that fetch as the pending request.
+  img.referrerPolicy = "no-referrer";
+
+  await t.step_wait(() => img.currentSrc.includes("env-big") && img.complete,
+                    "bigUrl becomes the current request", 5000, 50);
+  assert_equals(img.naturalWidth, 100);
+}, "A relevant mutation that keeps the selected source during an environment-change fetch doesn't discard that fetch");
 </script>
 </body>
