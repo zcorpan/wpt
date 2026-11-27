@@ -2,7 +2,7 @@
 # operations:
 #   - increment:
 #       Increments a value in the stash keyed by a given uuid, and returns an
-#       image file
+#       image file (or, with `broken`, bytes that aren't an image)
 #   - read:
 #       Returns the value in the stash keyed by a given uuid or 0 otherwise.
 #       This is a read-only operation, and does not remove the value from the
@@ -25,7 +25,9 @@ def main(request, response):
       stash_value = 0
     request.server.stash.put(uuid, stash_value + 1)
 
-    # Return a basic image.
+    # Return a basic image, or bytes that aren't an image if `broken` is given.
+    if b"broken" in request.GET:
+      return (200, [(b"Content-Type", b"image/png")], b"not an image")
     response_headers = [(b"Content-Type", b"image/png")]
     image_path = os.path.join(os.path.dirname(isomorphic_decode(__file__)), u"image.png")
     return (200, response_headers, open(image_path, mode='rb').read())

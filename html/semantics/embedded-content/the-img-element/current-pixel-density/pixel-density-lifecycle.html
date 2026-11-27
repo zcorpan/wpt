@@ -274,9 +274,10 @@ promise_test(async t => {
   assert_equals(img.naturalHeight, 25);
 }, "Updating selected pixel density for an in-flight pending request with the same URL updates natural dimensions on swap");
 
-promise_test(async t => {
-  const id = token();
-  const stashBase = "/html/semantics/embedded-content/the-img-element/resources/image-and-stash.py";
+// The media query flips when the iframe is resized, so a user agent that reacts to environment
+// changes for picture sources re-runs selection, while the selected source and density stay the
+// same.
+async function pictureInResizableFrame(t, url) {
   const iframe = document.createElement("iframe");
   iframe.style.width = "300px";
   iframe.style.height = "200px";
@@ -286,49 +287,60 @@ promise_test(async t => {
   document.body.appendChild(iframe);
   await iframeLoaded;
 
-  const img = iframe.contentDocument.createElement("img");
-  const loaded = waitForEvent(img, "load");
-  img.srcset = `${stashBase}?increment=${id} 2x`;
-  iframe.contentDocument.body.appendChild(img);
-  await loaded;
+  const doc = iframe.contentDocument;
+  const picture = doc.createElement("picture");
+  const wide = doc.createElement("source");
+  wide.media = "(min-width: 400px)";
+  wide.srcset = `${url} 2x`;
+  const narrow = doc.createElement("source");
+  narrow.srcset = `${url} 2x`;
+  const img = doc.createElement("img");
+  picture.append(wide, narrow, img);
+  return { iframe, picture, img };
+}
 
-  let countText = await (await fetch(`${stashBase}?read=${id}`)).text();
-  assert_equals(countText, "1", "initial load fetched once");
+async function resizeAndSettle(t, iframe) {
+  iframe.style.width = "500px";
+  await nextAnimationFrames(iframe.contentWindow, 3);
+  await new Promise(resolve => t.step_timeout(resolve, 150));
+}
+
+const stashBase = "/html/semantics/embedded-content/the-img-element/resources/image-and-stash.py";
+
+async function fetchCount(id) {
+  return (await fetch(`${stashBase}?read=${id}`, { cache: "no-store" })).text();
+}
+
+promise_test(async t => {
+  const id = token();
+  const { iframe, picture, img } = await pictureInResizableFrame(t, `${stashBase}?increment=${id}`);
+  const loaded = waitForEvent(img, "load");
+  iframe.contentDocument.body.appendChild(picture);
+  await loaded;
+  assert_equals(await fetchCount(id), "1", "initial load fetched once");
 
   let extraLoads = 0;
   img.addEventListener("load", () => { extraLoads++; });
-  iframe.style.width = "500px";
-  await nextAnimationFrames(iframe.contentWindow, 3);
-  await new Promise(resolve => t.step_timeout(resolve, 150));
+  await resizeAndSettle(t, iframe);
 
-  countText = await (await fetch(`${stashBase}?read=${id}`)).text();
   assert_equals(extraLoads, 0, "viewport resize should not fire another load event");
-  assert_equals(countText, "1", "viewport resize should not re-fetch unchanged 2x candidate");
+  assert_equals(await fetchCount(id), "1", "viewport resize should not re-fetch unchanged 2x candidate");
 }, "Environment change does not re-fetch an already loaded 2x srcset candidate");
 
 promise_test(async t => {
-  const iframe = document.createElement("iframe");
-  iframe.style.width = "300px";
-  iframe.style.height = "200px";
-  t.add_cleanup(() => iframe.remove());
-  const iframeLoaded = waitForEvent(iframe, "load");
-  iframe.srcdoc = "<!doctype html><body></body>";
-  document.body.appendChild(iframe);
-  await iframeLoaded;
-
-  const img = iframe.contentDocument.createElement("img");
+  const id = token();
+  const { iframe, picture, img } = await pictureInResizableFrame(t, `${stashBase}?increment=${id}&broken`);
   let errorCount = 0;
   img.addEventListener("error", () => { errorCount++; });
   const initialError = new Promise(resolve => img.addEventListener("error", resolve, { once: true }));
-  img.srcset = `/images/broken.png?broken-${token()} 2x`;
-  iframe.contentDocument.body.appendChild(img);
+  iframe.contentDocument.body.appendChild(picture);
   await initialError;
-  assert_equals(errorCount, 1);
+  assert_equals(await fetchCount(id), "1", "initial load fetched once");
 
-  iframe.style.width = "500px";
-  await nextAnimationFrames(iframe.contentWindow, 3);
-  await new Promise(resolve => t.step_timeout(resolve, 150));
-  assert_equals(errorCount, 1, "viewport resize should not re-fetch broken 2x candidate");
+  await resizeAndSettle(t, iframe);
+
+  assert_equals(errorCount, 1, "viewport resize should not fire another error event");
+  assert_equals(await fetchCount(id), "1", "viewport resize should not re-fetch broken 2x candidate");
 }, "Environment change does not re-fetch a broken 2x srcset candidate");
 </script>
 </body>
