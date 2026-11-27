@@ -188,6 +188,9 @@ promise_test(async t => {
   assert_false(loadFired, "image load should still be in flight");
 
   source.srcset = `${slowUrl} 4x`;
+  await new Promise(resolve => t.step_timeout(resolve, 0));
+  assert_false(loadFired, "image load should still be in flight after re-selection");
+  assert_equals(img.naturalWidth, 25, "naturalWidth updated before the image finishes loading");
   await loaded;
   assert_equals(img.naturalWidth, 25);
   assert_equals(img.naturalHeight, 25);
@@ -213,10 +216,41 @@ promise_test(async t => {
   assert_false(loadFired, "image load should still be in flight");
 
   img.sizes = "50px";
+  await new Promise(resolve => t.step_timeout(resolve, 0));
+  assert_false(loadFired, "image load should still be in flight after re-selection");
+  assert_approx_equals(img.naturalWidth, 25, 1, "naturalWidth updated before the image finishes loading");
   await loaded;
   assert_approx_equals(img.naturalWidth, 25, 1);
   assert_approx_equals(img.naturalHeight, 25, 1);
 }, "Updating selected pixel density via sizes while same-URL w-descriptor current request is partially available updates natural dimensions");
+
+promise_test(async t => {
+  const id = token();
+  const partialUrl = `/images/green-100x100.png?drop-current-${id}&pipe=trickle(2048:d1.5)`;
+  const otherUrl = `/images/green-256x256.png?drop-pending-${id}&pipe=trickle(d0.5)`;
+  const img = document.createElement("img");
+  t.add_cleanup(() => img.remove());
+  img.srcset = `${partialUrl} 1x`;
+  document.body.appendChild(img);
+
+  await t.step_wait(() => img.naturalWidth > 0, "partially available header decoded", 1000, 10);
+  assert_equals(img.naturalWidth, 100);
+
+  // Starts a pending request for otherUrl.
+  img.srcset = `${otherUrl} 1x`;
+  await new Promise(resolve => t.step_timeout(resolve, 0));
+
+  // Re-selects the partially available current request, which drops the pending request.
+  img.srcset = `${partialUrl} 2x`;
+  await new Promise(resolve => t.step_timeout(resolve, 0));
+  assert_equals(img.naturalWidth, 50, "re-selected current request at 2x");
+
+  // With no pending request left, this starts a new request for otherUrl.
+  img.srcset = `${otherUrl} 1x`;
+  await t.step_wait(() => img.currentSrc.includes("drop-pending") && img.complete,
+                    "otherUrl becomes the current request", 5000, 50);
+  assert_equals(img.naturalWidth, 256);
+}, "Re-selecting a partially available current request drops the pending request");
 
 promise_test(async t => {
   const picture = document.createElement("picture");
